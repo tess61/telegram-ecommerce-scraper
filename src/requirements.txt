@@ -1,0 +1,6 @@
+telethon
+pandas
+numpy
+unidecode
+regex
+logging
