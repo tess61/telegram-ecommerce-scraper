@@ -4,3 +4,4 @@ numpy
 unidecode
 regex
 logging
+python-dotenv
