@@ -18,6 +18,47 @@ This project scrapes messages and images from Ethiopian e-commerce Telegram chan
 - `evaluation.log`: Logs for evaluation and splitting.
 - `training.log`: Logs for NER training.
 
+```bash
+telegram-ecommerce-scraper/
+├── src/
+│   ├── telegram_scraper.py
+│   ├── preprocess.py
+│   ├── label_data.py
+│   ├── evaluate_and_split.py
+│   ├── train_ner.py
+│   ├── interpret_model.py
+│   └── requirements.txt
+├── data/
+│   ├── raw/
+│   │   └── telegram_data.csv
+│   ├── processed/
+│   │   └── processed_data.csv
+│   ├── images/
+│   ├── labeled/
+│   │   ├── labeled_data.conll
+│   │   ├── train.conll
+│   │   ├── val.conll
+│   │   └── test.conll
+│   ├── evaluation/
+│   │   ├── labeling_report.txt
+│   │   └── ner_evaluation.txt
+│   └── interpretability/
+│       ├── shap_report.txt
+│       ├── lime_report.txt
+│       └── difficult_cases.txt
+├── models/
+│   └── ner_model/
+├── .env
+├── .gitignore
+├── README.md
+├── telegram_ingestion.log
+├── preprocess.log
+├── labeling.log
+├── evaluation.log
+├── training.log
+└── interpretability.log
+```
+
 ## Setup
 
 1. Clone the repository:
@@ -54,4 +95,8 @@ This project scrapes messages and images from Ethiopian e-commerce Telegram chan
 8. Train and evaluate NER model:
    ```bash
       python src/train_ner.py
+   ```
+9. Run interpretability analysis:
+   ```bash
+      python src/interpret_model.py
    ```
