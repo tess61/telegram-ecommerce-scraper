@@ -7,3 +7,7 @@ logging
 python-dotenv
 spacy
 scikit-learn
+lime
+torch
+shap
+transformers
