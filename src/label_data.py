@@ -1,10 +1,11 @@
 # src/label_data.py
 import pandas as pd
 import regex as re
+import unidecode
 import logging
-import ast
 from typing import List, Tuple
 import os
+import ast
 
 # Configure logging
 logging.basicConfig(
@@ -23,9 +24,7 @@ class DataLabeler:
         self.product_keywords = {
             'spatulas', 'slicer', 'guard', 'strip', 'warmer', 'sterilizer', 'steamer',
             'pan', 'clipper', 'bottle', 'box', 'bag', 'mop', 'pad', 'tape', 'diffuser',
-            'humidifier', 'wire', 'corrector', 'blender', 'chopper', 'whisk', 'magnifier',
-            'speaker', 'base', 'refrigerator', 'cutter', 'earbuds', 'backpack', 'roller',
-            'machine', 'sticker', 'dryer', 'styler', 'vibrator', 'oximeter', 'shaper'
+            'humidifier', 'wire', 'corrector', 'blender', 'chopper', 'whisk', 'magnifier'
         }
         self.price_indicators = {'ዋጋ', 'ብር', 'price', 'birr'}
         self.location_indicators = {'አድራሻ', 'ለቡ', 'መገናኛ', 'ሞል', 'ፎቅ', 'ቢሮ', 'ሲቲ', 'ቅርንጫፍ'}
@@ -45,12 +44,15 @@ class DataLabeler:
         i = 0
         while i < len(tokens):
             token = tokens[i]
+            if not token.strip():  # Skip empty tokens
+                i += 1
+                continue
             label = 'O'
 
             # Price labeling
-            if token in self.price_indicators or re.match(r'^\d+[,\d]*ብር$', token) or re.match(r'^\d+[,\d]*$', token):
+            if token in self.price_indicators or re.match(r'^\d+[,\d]*ብር?$', token) or re.match(r'^\d+[,\d]*$', token):
                 label = 'I-PRICE'
-            elif i > 0 and labeled_tokens[-1][1] == 'I-PRICE' and token in {'ብር', 'birr'}:
+            elif i > 0 and labeled_tokens and labeled_tokens[-1][1] == 'I-PRICE' and token in {'ብር', 'birr'}:
                 label = 'I-PRICE'
 
             # Location labeling
@@ -60,13 +62,11 @@ class DataLabeler:
             # Product labeling
             elif token.lower() in self.product_keywords:
                 label = 'B-PRODUCT'
-                # Look ahead for multi-word products
                 j = i + 1
-                while j < len(tokens) and (
+                while j < len(tokens) and tokens[j].strip() and (
                     tokens[j].lower() in {'stainless', 'steel', 'double', 'rechargable', 'isolated',
-                                          'portable', 'menstural', 'heating', 'convenience', 'wireless',
-                                          'micro', 'personal', 'electric'} or
-                    re.match(r'^[ፀጉርልብስምግብ]+$', tokens[j])
+                                          'portable', 'menstural', 'heating', 'convenience', 'wireless'} or
+                    re.match(r'^[ፀጉራለብስምግብ]+$', tokens[j])
                 ):
                     labeled_tokens.append((tokens[j], 'I-PRODUCT'))
                     j += 1
@@ -86,14 +86,16 @@ class DataLabeler:
             labeled_data = []
             for idx, row in self.df.iterrows():
                 try:
-                    # Parse tokens (stored as string representation of list)
                     tokens = ast.literal_eval(row['tokens']) if isinstance(row['tokens'], str) else row['tokens']
+                    if not tokens:  # Skip empty token lists
+                        continue
                     labeled_tokens = self.label_tokens(tokens)
-                    # Add sentence metadata
+                    if not labeled_tokens:  # Skip empty labeled tokens
+                        continue
                     labeled_data.append(('-DOCSTART-', '-X-'))
                     for token, label in labeled_tokens:
                         labeled_data.append((token, label))
-                    labeled_data.append(())  # Empty line for sentence boundary
+                    labeled_data.append(())  # Sentence boundary
                 except Exception as e:
                     logging.warning(f"Error labeling message ID {row['ID']}: {str(e)}")
                     continue
@@ -111,7 +113,8 @@ class DataLabeler:
             with open(self.output_path, 'w', encoding='utf-8') as f:
                 for item in labeled_data:
                     if isinstance(item, tuple) and len(item) == 2:
-                        f.write(f"{item[0]}\t{item[1]}\n")
+                        if item[0].strip():  # Ensure non-empty token
+                            f.write(f"{item[0]}\t{item[1]}\n")
                     else:
                         f.write('\n')
             logging.info(f"Labeled data saved to {self.output_path}")
