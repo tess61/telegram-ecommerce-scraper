@@ -1,7 +1,7 @@
 # src/interpret_model.py
 import logging
 import os
-from typing import List, Tuple
+from typing import List, Dict, Tuple  # Added Dict import
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
 import shap
@@ -19,7 +19,7 @@ logging.basicConfig(
 
 class ModelInterpreter:
     def __init__(self,
-                 model_path: str = 'models/ner_model/ner/model',
+                 model_path: str = 'models/ner_model/ner/model',  # Updated path
                  val_path: str = 'data/labeled/val.conll',
                  shap_output: str = 'data/interpretability/shap_report.txt',
                  lime_output: str = 'data/interpretability/lime_report.txt',
@@ -30,9 +30,14 @@ class ModelInterpreter:
         self.shap_output = shap_output
         self.lime_output = lime_output
         self.difficult_cases_output = difficult_cases_output
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForTokenClassification.from_pretrained(model_path)
-        self.pipeline = pipeline("ner", model=self.model, tokenizer=self.tokenizer, aggregation_strategy="simple")
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+            self.model = AutoModelForTokenClassification.from_pretrained(self.model_path)
+            self.pipeline = pipeline("ner", model=self.model, tokenizer=self.tokenizer, aggregation_strategy="simple")
+            logging.info(f"Loaded model from {self.model_path}")
+        except Exception as e:
+            logging.error(f"Error loading model: {str(e)}")
+            raise
         self.labels = ['O', 'B-PRODUCT', 'I-PRODUCT', 'B-PRICE', 'I-PRICE', 'B-LOC', 'I-LOC']
         self.class_names = ['PRODUCT', 'PRICE', 'LOC', 'O']  # For LIME
 
@@ -72,7 +77,11 @@ class ModelInterpreter:
 
     def predict_ner(self, text: str) -> List[Dict]:
         """Run NER pipeline on text."""
-        return self.pipeline(text)
+        try:
+            return self.pipeline(text)
+        except Exception as e:
+            logging.error(f"Error in NER prediction for text '{text}': {str(e)}")
+            return []
 
     def shap_explain(self, texts: List[str]) -> List[str]:
         """Generate SHAP explanations for NER predictions."""
