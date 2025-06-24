@@ -5,3 +5,5 @@ unidecode
 regex
 logging
 python-dotenv
+spacy
+scikit-learn

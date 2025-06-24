@@ -48,8 +48,16 @@ class DataEvaluator:
                             sentences.append(current_sentence)
                             current_sentence = []
                     else:
-                        token, label = line.split('\t')
-                        current_sentence.append((token, label))
+                        try:
+                            parts = line.split('\t')
+                            if len(parts) != 2 or not parts[0].strip():
+                                logging.warning(f"Skipping invalid line: {line}")
+                                continue
+                            token, label = parts
+                            current_sentence.append((token, label))
+                        except ValueError:
+                            logging.warning(f"Skipping malformed line: {line}")
+                            continue
             if current_sentence:
                 sentences.append(current_sentence)
             logging.info(f"Loaded {len(sentences)} sentences from {self.input_path}")
@@ -74,13 +82,10 @@ class DataEvaluator:
                 for token, label in sentence:
                     expected_label = 'O'
                     
-                    # Expected price label
                     if re.match(self.price_pattern, token) or token in {'ብር', 'ዋጋ', 'price', 'birr'}:
                         expected_label = 'I-PRICE'
-                    # Expected location label
                     elif token in self.location_indicators or re.match(r'^\d+[.\d]*$|^[ቁምስሪለቡ#]+$', token):
                         expected_label = 'I-LOC'
-                    # Expected product label
                     elif token.lower() in self.product_keywords:
                         expected_label = 'B-PRODUCT'
                     elif re.match(r'^[ፀጉራለብስምግብ]+$', token):
@@ -157,11 +162,8 @@ class DataEvaluator:
     def process(self):
         """Run evaluation and data splitting."""
         try:
-            # Evaluate labeling
             report = self.evaluate_labeling()
             self.save_report(report)
-            
-            # Split and save data
             train_data, val_data, test_data = self.split_data()
             self.save_conll(train_data, self.train_path)
             self.save_conll(val_data, self.val_path)

@@ -4,14 +4,19 @@ This project scrapes messages and images from Ethiopian e-commerce Telegram chan
 
 ## Directory Structure
 
-- `src/`: Contains Python scripts for scraping and preprocessing.
+- `src/`: Contains Python scripts for scraping, preprocessing, labeling, evaluation, and NER training.
 - `data/raw/`: Stores raw scraped data (`telegram_data.csv`).
 - `data/processed/`: Stores preprocessed data (`processed_data.csv`).
 - `data/images/`: Stores downloaded images.
-- `data/labeled/`: Stores labeled data in CoNLL format.
+- `data/labeled/`: Stores labeled data (`labeled_data.conll`, `train.conll`, `val.conll`, `test.conll`).
+- `data/evaluation/`: Stores evaluation reports (`labeling_report.txt`, `ner_evaluation.txt`).
+- `models/`: Stores trained NER model (`ner_model`).
 - `.env`: Stores Telegram API credentials (not tracked by Git).
 - `telegram_ingestion.log`: Logs for scraping process.
 - `preprocess.log`: Logs for preprocessing.
+- `labeling.log`: Logs for labeling.
+- `evaluation.log`: Logs for evaluation and splitting.
+- `training.log`: Logs for NER training.
 
 ## Setup
 
@@ -41,4 +46,12 @@ This project scrapes messages and images from Ethiopian e-commerce Telegram chan
 6. Run labeling:
    ```bash
        python src/label_data.py
+   ```
+7. Run evaluation and data splitting:
+   ```bash
+       python src/evaluate_and_split.py
+   ```
+8. Train and evaluate NER model:
+   ```bash
+      python src/train_ner.py
    ```
